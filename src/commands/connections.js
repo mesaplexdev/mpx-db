@@ -6,14 +6,40 @@ import { createConnection } from '../db/connection.js';
 /**
  * Handle connect command
  */
-export async function handleConnect(url, options) {
+export async function handleConnect(url, options = {}) {
   try {
     // Test connection
-    console.log(chalk.gray('Testing connection...'));
+    if (!options.quiet && !options.json) {
+      console.log(chalk.gray('Testing connection...'));
+    }
+    
     const db = await createConnection(url);
     const info = await db.getInfo();
     await db.disconnect();
     
+    // Save if requested
+    let saved = false;
+    if (options.save) {
+      saveConnection(options.save, url);
+      saved = true;
+    }
+    
+    // JSON output
+    if (options.json) {
+      console.log(JSON.stringify({
+        success: true,
+        connection: {
+          type: info.type,
+          database: info.database,
+          path: info.path
+        },
+        saved,
+        name: options.save || null
+      }, null, 2));
+      return;
+    }
+    
+    // Human-readable output
     console.log(chalk.green('✓ Connection successful'));
     console.log(chalk.gray(`  Type: ${info.type}`));
     if (info.database) {
@@ -23,15 +49,17 @@ export async function handleConnect(url, options) {
       console.log(chalk.gray(`  Path: ${info.path}`));
     }
     
-    // Save if requested
     if (options.save) {
-      saveConnection(options.save, url);
       console.log(chalk.green(`✓ Saved connection as "${options.save}"`));
     }
     
   } catch (err) {
-    console.error(chalk.red('✗ Connection failed'));
-    console.error(chalk.red(`  ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red('✗ Connection failed'));
+      console.error(chalk.red(`  ${err.message}`));
+    }
     process.exit(1);
   }
 }
@@ -39,13 +67,27 @@ export async function handleConnect(url, options) {
 /**
  * List saved connections
  */
-export async function listConnections() {
+export async function listConnections(options = {}) {
   const connections = loadConnections();
   
+  // JSON output
+  if (options.json) {
+    const connArray = Object.entries(connections).map(([name, conn]) => ({
+      name,
+      type: conn.type,
+      createdAt: new Date(conn.createdAt).toISOString()
+    }));
+    console.log(JSON.stringify({ connections: connArray }, null, 2));
+    return;
+  }
+  
+  // Human-readable output
   if (Object.keys(connections).length === 0) {
     console.log(chalk.yellow('No saved connections'));
-    console.log(chalk.gray('\nSave a connection with:'));
-    console.log(chalk.gray('  mpx-db connect --save <name> <url>'));
+    if (!options.quiet) {
+      console.log(chalk.gray('\nSave a connection with:'));
+      console.log(chalk.gray('  mpx-db connect --save <name> <url>'));
+    }
     return;
   }
   
@@ -68,9 +110,20 @@ export async function listConnections() {
 /**
  * Delete a saved connection
  */
-export async function removeConnection(name) {
+export async function removeConnection(name, options = {}) {
   const deleted = deleteConnection(name);
   
+  // JSON output
+  if (options.json) {
+    console.log(JSON.stringify({
+      success: deleted,
+      name,
+      message: deleted ? 'Connection deleted' : 'Connection not found'
+    }, null, 2));
+    return;
+  }
+  
+  // Human-readable output
   if (deleted) {
     console.log(chalk.green(`✓ Deleted connection "${name}"`));
   } else {
