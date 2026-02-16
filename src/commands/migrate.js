@@ -10,9 +10,17 @@ const MIGRATIONS_DIR = './migrations';
 /**
  * Initialize migrations directory
  */
-export async function initMigrations() {
+export async function initMigrations(options = {}) {
   if (fs.existsSync(MIGRATIONS_DIR)) {
-    console.log(chalk.yellow('Migrations directory already exists'));
+    if (options.json) {
+      console.log(JSON.stringify({ 
+        success: false, 
+        message: 'Migrations directory already exists',
+        directory: MIGRATIONS_DIR 
+      }, null, 2));
+    } else {
+      console.log(chalk.yellow('Migrations directory already exists'));
+    }
     return;
   }
   
@@ -56,16 +64,31 @@ DROP TABLE users;
   
   fs.writeFileSync(path.join(MIGRATIONS_DIR, 'README.md'), readme);
   
-  console.log(chalk.green('✓ Migrations directory created'));
-  console.log(chalk.gray(`  ${MIGRATIONS_DIR}/`));
+  if (options.json) {
+    console.log(JSON.stringify({ 
+      success: true, 
+      directory: MIGRATIONS_DIR,
+      message: 'Migrations directory created'
+    }, null, 2));
+  } else {
+    console.log(chalk.green('✓ Migrations directory created'));
+    console.log(chalk.gray(`  ${MIGRATIONS_DIR}/`));
+  }
 }
 
 /**
  * Create new migration file
  */
-export async function createMigration(description) {
+export async function createMigration(description, options = {}) {
   if (!fs.existsSync(MIGRATIONS_DIR)) {
-    console.log(chalk.yellow('Migrations directory not found. Run: mpx-db migrate init'));
+    if (options.json) {
+      console.log(JSON.stringify({ 
+        success: false, 
+        error: 'Migrations directory not found' 
+      }, null, 2));
+    } else {
+      console.log(chalk.yellow('Migrations directory not found. Run: mpx-db migrate init'));
+    }
     return;
   }
   
@@ -98,8 +121,16 @@ export async function createMigration(description) {
   
   fs.writeFileSync(filepath, template);
   
-  console.log(chalk.green('✓ Created migration'));
-  console.log(chalk.gray(`  ${filepath}`));
+  if (options.json) {
+    console.log(JSON.stringify({ 
+      success: true, 
+      filename,
+      path: filepath 
+    }, null, 2));
+  } else {
+    console.log(chalk.green('✓ Created migration'));
+    console.log(chalk.gray(`  ${filepath}`));
+  }
 }
 
 /**
@@ -131,7 +162,7 @@ function parseMigration(filepath) {
 /**
  * Show migration status
  */
-export async function showMigrationStatus(target) {
+export async function showMigrationStatus(target, options = {}) {
   let db;
   
   try {
@@ -149,35 +180,63 @@ export async function showMigrationStatus(target) {
     const files = getMigrationFiles();
     
     if (files.length === 0) {
-      console.log(chalk.yellow('No migration files found'));
-      console.log(chalk.gray('Create one with: mpx-db migrate create <description>'));
+      if (options.json) {
+        console.log(JSON.stringify({ migrations: [] }, null, 2));
+      } else {
+        console.log(chalk.yellow('No migration files found'));
+        if (!options.quiet) {
+          console.log(chalk.gray('Create one with: mpx-db migrate create <description>'));
+        }
+      }
       return;
     }
     
+    // Build migration list
+    const migrations = files.map(file => {
+      const name = file.replace('.sql', '');
+      const isApplied = appliedNames.has(name);
+      const appliedRecord = applied.find(m => m.name === name);
+      
+      return {
+        name,
+        status: isApplied ? 'applied' : 'pending',
+        appliedAt: appliedRecord ? new Date(appliedRecord.applied_at).toISOString() : null
+      };
+    });
+    
+    // JSON output
+    if (options.json) {
+      console.log(JSON.stringify({ migrations }, null, 2));
+      return;
+    }
+    
+    // Human-readable output
     const table = new Table({
       head: ['Migration', 'Status', 'Applied'].map(h => chalk.cyan(h)),
       style: { head: [], border: ['gray'] }
     });
     
-    for (const file of files) {
-      const name = file.replace('.sql', '');
-      const isApplied = appliedNames.has(name);
-      const appliedRecord = applied.find(m => m.name === name);
-      
+    for (const m of migrations) {
       table.push([
-        chalk.white(name),
-        isApplied ? chalk.green('Applied') : chalk.yellow('Pending'),
-        appliedRecord ? chalk.gray(new Date(appliedRecord.applied_at).toLocaleString()) : chalk.gray('-')
+        chalk.white(m.name),
+        m.status === 'applied' ? chalk.green('Applied') : chalk.yellow('Pending'),
+        m.appliedAt ? chalk.gray(new Date(m.appliedAt).toLocaleString()) : chalk.gray('-')
       ]);
     }
     
     console.log(table.toString());
     
-    const pending = files.filter(f => !appliedNames.has(f.replace('.sql', '')));
-    console.log(chalk.gray(`\n${applied.length} applied, ${pending.length} pending`));
+    if (!options.quiet) {
+      const pending = migrations.filter(m => m.status === 'pending');
+      console.log(chalk.gray(`\n${applied.length} applied, ${pending.length} pending`));
+    }
     
   } catch (err) {
-    console.error(chalk.red(`✗ ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red(`✗ ${err.message}`));
+    }
     process.exit(1);
   } finally {
     if (db) {
@@ -189,7 +248,7 @@ export async function showMigrationStatus(target) {
 /**
  * Run pending migrations
  */
-export async function runMigrations(target) {
+export async function runMigrations(target, options = {}) {
   let db;
   
   try {
@@ -205,18 +264,28 @@ export async function runMigrations(target) {
     const pending = files.filter(f => !appliedNames.has(f.replace('.sql', '')));
     
     if (pending.length === 0) {
-      console.log(chalk.green('✓ All migrations up to date'));
+      if (options.json) {
+        console.log(JSON.stringify({ success: true, applied: [], count: 0 }, null, 2));
+      } else {
+        console.log(chalk.green('✓ All migrations up to date'));
+      }
       return;
     }
     
-    console.log(chalk.cyan(`Running ${pending.length} migration(s)...\n`));
+    if (!options.quiet && !options.json) {
+      console.log(chalk.cyan(`Running ${pending.length} migration(s)...\n`));
+    }
+    
+    const appliedList = [];
     
     for (const file of pending) {
       const name = file.replace('.sql', '');
       const filepath = path.join(MIGRATIONS_DIR, file);
       const migration = parseMigration(filepath);
       
-      console.log(chalk.gray(`→ ${name}`));
+      if (!options.quiet && !options.json) {
+        console.log(chalk.gray(`→ ${name}`));
+      }
       
       // Execute migration (split by semicolon for multiple statements)
       // Remove comment lines first, then split
@@ -235,14 +304,29 @@ export async function runMigrations(target) {
       }
       
       await db.recordMigration(name);
+      appliedList.push(name);
       
-      console.log(chalk.green(`  ✓ Applied`));
+      if (!options.quiet && !options.json) {
+        console.log(chalk.green(`  ✓ Applied`));
+      }
     }
     
-    console.log(chalk.green(`\n✓ ${pending.length} migration(s) applied`));
+    if (options.json) {
+      console.log(JSON.stringify({ 
+        success: true, 
+        applied: appliedList, 
+        count: appliedList.length 
+      }, null, 2));
+    } else {
+      console.log(chalk.green(`\n✓ ${pending.length} migration(s) applied`));
+    }
     
   } catch (err) {
-    console.error(chalk.red(`\n✗ Migration failed: ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red(`\n✗ Migration failed: ${err.message}`));
+    }
     process.exit(1);
   } finally {
     if (db) {
@@ -254,7 +338,7 @@ export async function runMigrations(target) {
 /**
  * Rollback last migration
  */
-export async function rollbackMigration(target) {
+export async function rollbackMigration(target, options = {}) {
   let db;
   
   try {
@@ -266,7 +350,11 @@ export async function rollbackMigration(target) {
     const applied = await db.getAppliedMigrations();
     
     if (applied.length === 0) {
-      console.log(chalk.yellow('No migrations to rollback'));
+      if (options.json) {
+        console.log(JSON.stringify({ success: false, message: 'No migrations to rollback' }, null, 2));
+      } else {
+        console.log(chalk.yellow('No migrations to rollback'));
+      }
       return;
     }
     
@@ -274,18 +362,28 @@ export async function rollbackMigration(target) {
     const filepath = path.join(MIGRATIONS_DIR, `${last.name}.sql`);
     
     if (!fs.existsSync(filepath)) {
-      console.error(chalk.red(`✗ Migration file not found: ${filepath}`));
+      if (options.json) {
+        console.log(JSON.stringify({ success: false, error: 'Migration file not found' }, null, 2));
+      } else {
+        console.error(chalk.red(`✗ Migration file not found: ${filepath}`));
+      }
       process.exit(1);
     }
     
     const migration = parseMigration(filepath);
     
     if (!migration.down) {
-      console.error(chalk.red(`✗ No down migration found in ${last.name}`));
+      if (options.json) {
+        console.log(JSON.stringify({ success: false, error: 'No down migration found' }, null, 2));
+      } else {
+        console.error(chalk.red(`✗ No down migration found in ${last.name}`));
+      }
       process.exit(1);
     }
     
-    console.log(chalk.cyan(`Rolling back: ${last.name}`));
+    if (!options.quiet && !options.json) {
+      console.log(chalk.cyan(`Rolling back: ${last.name}`));
+    }
     
     // Execute rollback (split by semicolon for multiple statements)
     // Remove comment lines first, then split
@@ -305,10 +403,18 @@ export async function rollbackMigration(target) {
     
     await db.removeMigration(last.name);
     
-    console.log(chalk.green('✓ Rolled back'));
+    if (options.json) {
+      console.log(JSON.stringify({ success: true, rolledBack: last.name }, null, 2));
+    } else {
+      console.log(chalk.green('✓ Rolled back'));
+    }
     
   } catch (err) {
-    console.error(chalk.red(`✗ Rollback failed: ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red(`✗ Rollback failed: ${err.message}`));
+    }
     process.exit(1);
   } finally {
     if (db) {

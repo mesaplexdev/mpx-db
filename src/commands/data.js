@@ -6,7 +6,7 @@ import { resolveConnection } from './query.js';
 /**
  * Export table data to CSV or JSON
  */
-export async function exportData(target, tableName, options) {
+export async function exportData(target, tableName, options = {}) {
   let db;
   
   try {
@@ -17,12 +17,14 @@ export async function exportData(target, tableName, options) {
     const rows = await db.query(`SELECT * FROM ${tableName}`);
     
     if (rows.length === 0) {
-      console.log(chalk.yellow('No data to export'));
+      if (!options.quiet) {
+        console.log(chalk.yellow('No data to export'));
+      }
       return;
     }
     
     const format = options.format || 'json';
-    const output = options.output || `${tableName}.${format}`;
+    const output = options.output;
     
     let content;
     
@@ -34,12 +36,23 @@ export async function exportData(target, tableName, options) {
       throw new Error(`Unsupported format: ${format}`);
     }
     
-    fs.writeFileSync(output, content);
-    
-    console.log(chalk.green(`✓ Exported ${rows.length} rows to ${output}`));
+    // If output file specified, write to file
+    if (output) {
+      fs.writeFileSync(output, content);
+      if (!options.quiet) {
+        console.log(chalk.green(`✓ Exported ${rows.length} rows to ${output}`));
+      }
+    } else {
+      // Write to stdout
+      console.log(content);
+    }
     
   } catch (err) {
-    console.error(chalk.red(`✗ Export failed: ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red(`✗ Export failed: ${err.message}`));
+    }
     process.exit(1);
   } finally {
     if (db) {

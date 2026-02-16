@@ -13,6 +13,7 @@ Stop juggling multiple database tools. `mpx-db` gives you one clean interface fo
 ✅ **Schema operations** — Dump, describe, visualize database structure  
 ✅ **Data export** — Export to JSON/CSV with one command  
 ✅ **Secure** — Encrypted credential storage  
+✅ **AI-native** — JSON output, MCP server, schema discovery for AI agents  
 
 ## Installation
 
@@ -224,6 +225,135 @@ mpx-db migrate create add_order_status_field
 mpx-db export dev orders --format csv --output orders-backup.csv
 ```
 
+## AI Agent Usage
+
+`mpx-db` is **AI-native** — designed for both humans and AI agents. Every command supports machine-readable output and schema discovery.
+
+### JSON Output
+
+Add `--json` to any command for structured output:
+
+```bash
+# Query with JSON output
+mpx-db query dev "SELECT * FROM users LIMIT 3" --json
+{
+  "success": true,
+  "type": "query",
+  "rows": [
+    { "id": 1, "name": "Alice", "email": "alice@example.com" },
+    { "id": 2, "name": "Bob", "email": "bob@example.com" },
+    { "id": 3, "name": "Charlie", "email": "charlie@example.com" }
+  ],
+  "rowCount": 3,
+  "duration": 12
+}
+
+# List tables with JSON
+mpx-db tables dev --json
+{
+  "tables": [
+    { "name": "users", "type": "table", "rowCount": 150 },
+    { "name": "orders", "type": "table", "rowCount": 892 }
+  ]
+}
+
+# Migration status
+mpx-db migrate status dev --json
+{
+  "migrations": [
+    { "name": "20260215_100000_create_users", "status": "applied", "appliedAt": "2026-02-15T10:05:00.000Z" },
+    { "name": "20260216_120000_add_orders", "status": "pending", "appliedAt": null }
+  ]
+}
+```
+
+### Schema Discovery
+
+Get the full command schema for AI agent integration:
+
+```bash
+mpx-db --schema
+```
+
+Returns a comprehensive JSON schema describing all commands, flags, inputs, outputs, and examples.
+
+### MCP (Model Context Protocol) Server
+
+Run `mpx-db` as an MCP server for seamless AI agent integration:
+
+```bash
+mpx-db mcp
+```
+
+#### Claude Desktop Integration
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mpx-db": {
+      "command": "npx",
+      "args": ["mpx-db", "mcp"]
+    }
+  }
+}
+```
+
+Now Claude can directly query your databases, inspect schemas, and run migrations!
+
+#### Available MCP Tools
+
+- `query` — Execute SQL queries
+- `list_tables` — Get all tables with row counts
+- `describe_table` — Show table schema
+- `get_info` — Database information
+- `export_table` — Export table data as JSON
+- `get_schema` — Get full command schema
+
+### Quiet Mode
+
+Suppress non-essential output with `--quiet`:
+
+```bash
+# Just the data, no banners or progress messages
+mpx-db query dev "SELECT COUNT(*) FROM users" --quiet --json
+```
+
+### Exit Codes
+
+Predictable exit codes for CI/CD and scripting:
+
+- `0` — Success
+- `1` — Error (connection failed, query failed, etc.)
+
+```bash
+#!/bin/bash
+if mpx-db query dev "SELECT 1" --quiet; then
+  echo "Database is up"
+else
+  echo "Database is down"
+  exit 1
+fi
+```
+
+### Example: AI Agent Workflow
+
+```javascript
+// AI agent discovers available commands
+const schema = await exec('mpx-db --schema');
+
+// Agent queries database
+const result = await exec('mpx-db query dev "SELECT * FROM orders WHERE status = \'pending\'" --json');
+const orders = JSON.parse(result.stdout);
+
+// Agent inspects schema
+const tables = await exec('mpx-db tables dev --json');
+
+// Agent runs migration
+await exec('mpx-db migrate up dev --json --quiet');
+```
+
 ## Architecture
 
 ```
@@ -310,15 +440,18 @@ Test suite includes:
 
 ## Roadmap
 
-**v1.0 (Current)** ✅
+**v1.1 (Current)** ✅
 - SQLite, PostgreSQL, MySQL support
 - Connection management
 - Query execution with beautiful output
 - Schema inspection (dump, describe, tables, info)
 - Migration system (create, up, down, status)
 - Data export (JSON, CSV)
+- **AI-native features:** JSON output (`--json`), schema discovery (`--schema`), MCP server mode
+- **Quiet mode** (`--quiet`) for scripting
+- Predictable exit codes
 
-**v1.1 (Planned)**
+**v1.2 (Planned)**
 - Interactive query REPL mode
 - Query history and favorites
 - Auto-complete for table/column names

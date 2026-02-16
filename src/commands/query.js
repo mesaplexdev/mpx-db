@@ -6,7 +6,7 @@ import { createConnection } from '../db/connection.js';
 /**
  * Execute a query or statement
  */
-export async function handleQuery(target, sql, options) {
+export async function handleQuery(target, sql, options = {}) {
   let db;
   
   try {
@@ -27,30 +27,60 @@ export async function handleQuery(target, sql, options) {
       const rows = await db.query(sql);
       const duration = Date.now() - startTime;
       
-      // Display results
-      if (rows.length === 0) {
-        console.log(chalk.yellow('No rows returned'));
+      // JSON output
+      if (options.json) {
+        console.log(JSON.stringify({
+          success: true,
+          type: 'query',
+          rows,
+          rowCount: rows.length,
+          duration
+        }, null, 2));
       } else {
-        displayTable(rows);
+        // Display results
+        if (rows.length === 0) {
+          console.log(chalk.yellow('No rows returned'));
+        } else {
+          displayTable(rows);
+        }
+        
+        if (!options.quiet) {
+          console.log(chalk.gray(`\n${rows.length} row(s) in ${duration}ms`));
+        }
       }
-      
-      console.log(chalk.gray(`\n${rows.length} row(s) in ${duration}ms`));
     } else {
       // INSERT, UPDATE, DELETE, CREATE, DROP, ALTER - returns affected rows
       const result = await db.execute(sql);
       const duration = Date.now() - startTime;
       
-      console.log(chalk.green('✓ Statement executed successfully'));
-      console.log(chalk.gray(`  Affected rows: ${result.affectedRows}`));
-      if (result.insertId) {
-        console.log(chalk.gray(`  Insert ID: ${result.insertId}`));
+      // JSON output
+      if (options.json) {
+        console.log(JSON.stringify({
+          success: true,
+          type: 'statement',
+          affectedRows: result.affectedRows,
+          insertId: result.insertId,
+          duration
+        }, null, 2));
+      } else {
+        console.log(chalk.green('✓ Statement executed successfully'));
+        if (!options.quiet) {
+          console.log(chalk.gray(`  Affected rows: ${result.affectedRows}`));
+          if (result.insertId) {
+            console.log(chalk.gray(`  Insert ID: ${result.insertId}`));
+          }
+          console.log(chalk.gray(`  Duration: ${duration}ms`));
+        }
       }
-      console.log(chalk.gray(`  Duration: ${duration}ms`));
     }
     
   } catch (err) {
-    console.error(chalk.red('✗ Query failed'));
-    console.error(chalk.red(`  ${err.message}`));
+    if (options.json) {
+      console.log(JSON.stringify({ success: false, error: err.message }, null, 2));
+    } else {
+      console.error(chalk.red('✗ Query failed'));
+      console.error(chalk.red(`  ${err.message}`));
+    }
     process.exit(1);
   } finally {
     if (db) {
