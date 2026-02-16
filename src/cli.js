@@ -1,0 +1,141 @@
+import { Command } from 'commander';
+import chalk from 'chalk';
+import { handleConnect, listConnections, removeConnection } from './commands/connections.js';
+import { handleQuery } from './commands/query.js';
+import { showInfo, listTables, describeTable, dumpSchema } from './commands/schema.js';
+import { 
+  initMigrations, 
+  createMigration, 
+  showMigrationStatus, 
+  runMigrations, 
+  rollbackMigration 
+} from './commands/migrate.js';
+import { exportData } from './commands/data.js';
+
+const program = new Command();
+
+program
+  .name('mpx-db')
+  .description('Database management CLI - Connect, query, migrate, and manage databases')
+  .version('1.0.0');
+
+// Connect command
+program
+  .command('connect')
+  .description('Test and optionally save a database connection')
+  .argument('<url>', 'Connection URL (sqlite://, postgres://, mysql://)')
+  .option('-s, --save <name>', 'Save connection with a name')
+  .action(handleConnect);
+
+// Connections command
+const connections = program
+  .command('connections')
+  .description('Manage saved connections');
+
+connections
+  .command('list')
+  .description('List all saved connections')
+  .action(listConnections);
+
+connections
+  .command('remove')
+  .description('Remove a saved connection')
+  .argument('<name>', 'Connection name')
+  .action(removeConnection);
+
+// Query command
+program
+  .command('query')
+  .description('Execute a SQL query')
+  .argument('<target>', 'Connection name or URL')
+  .argument('<sql>', 'SQL query to execute')
+  .action(handleQuery);
+
+// Info command
+program
+  .command('info')
+  .description('Show database information')
+  .argument('<target>', 'Connection name or URL')
+  .action(showInfo);
+
+// Tables command
+program
+  .command('tables')
+  .description('List all tables')
+  .argument('<target>', 'Connection name or URL')
+  .action(listTables);
+
+// Describe command
+program
+  .command('describe')
+  .description('Show table schema')
+  .argument('<target>', 'Connection name or URL')
+  .argument('<table>', 'Table name')
+  .action(describeTable);
+
+// Schema commands
+const schema = program
+  .command('schema')
+  .description('Schema operations');
+
+schema
+  .command('dump')
+  .description('Dump database schema as SQL')
+  .argument('<target>', 'Connection name or URL')
+  .action(dumpSchema);
+
+// Migration commands
+const migrate = program
+  .command('migrate')
+  .description('Database migration commands');
+
+migrate
+  .command('init')
+  .description('Initialize migrations directory')
+  .action(initMigrations);
+
+migrate
+  .command('create')
+  .description('Create a new migration file')
+  .argument('<description>', 'Migration description')
+  .action(createMigration);
+
+migrate
+  .command('status')
+  .description('Show migration status')
+  .argument('<target>', 'Connection name or URL')
+  .action(showMigrationStatus);
+
+migrate
+  .command('up')
+  .description('Run pending migrations')
+  .argument('<target>', 'Connection name or URL')
+  .action(runMigrations);
+
+migrate
+  .command('down')
+  .description('Rollback last migration')
+  .argument('<target>', 'Connection name or URL')
+  .action(rollbackMigration);
+
+// Export command
+program
+  .command('export')
+  .description('Export table data')
+  .argument('<target>', 'Connection name or URL')
+  .argument('<table>', 'Table name')
+  .option('-f, --format <format>', 'Output format (json, csv)', 'json')
+  .option('-o, --output <file>', 'Output file path')
+  .action(exportData);
+
+// Error handling
+program.exitOverride();
+
+try {
+  await program.parseAsync(process.argv);
+} catch (err) {
+  if (err.code !== 'commander.help' && err.code !== 'commander.helpDisplayed') {
+    console.error(chalk.red(`Error: ${err.message}`));
+    process.exit(1);
+  }
+}
