@@ -1,5 +1,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { handleConnect, listConnections, removeConnection } from './commands/connections.js';
 import { handleQuery } from './commands/query.js';
 import { showInfo, listTables, describeTable, dumpSchema } from './commands/schema.js';
@@ -12,12 +15,16 @@ import {
 } from './commands/migrate.js';
 import { exportData } from './commands/data.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+
 const program = new Command();
 
 program
   .name('mpx-db')
   .description('Database management CLI - Connect, query, migrate, and manage databases')
-  .version('1.0.0');
+  .version(pkg.version);
 
 // Connect command
 program
@@ -134,6 +141,10 @@ program.exitOverride();
 try {
   await program.parseAsync(process.argv);
 } catch (err) {
+  // Ignore help and version display "errors"
+  if (err.code === 'commander.version') {
+    process.exit(0);
+  }
   if (err.code !== 'commander.help' && err.code !== 'commander.helpDisplayed') {
     console.error(chalk.red(`Error: ${err.message}`));
     process.exit(1);
