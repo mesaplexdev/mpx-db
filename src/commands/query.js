@@ -4,7 +4,7 @@ import { getConnection } from '../utils/config.js';
 import { createConnection } from '../db/connection.js';
 
 /**
- * Execute a query
+ * Execute a query or statement
  */
 export async function handleQuery(target, sql, options) {
   let db;
@@ -16,19 +16,37 @@ export async function handleQuery(target, sql, options) {
     // Connect
     db = await createConnection(connectionString);
     
-    // Execute query
+    // Determine if this is a SELECT query or a DML/DDL statement
+    const isSelectQuery = isQueryStatement(sql);
+    
+    // Execute
     const startTime = Date.now();
-    const rows = await db.query(sql);
-    const duration = Date.now() - startTime;
     
-    // Display results
-    if (rows.length === 0) {
-      console.log(chalk.yellow('No rows returned'));
+    if (isSelectQuery) {
+      // SELECT, PRAGMA, EXPLAIN, WITH - returns rows
+      const rows = await db.query(sql);
+      const duration = Date.now() - startTime;
+      
+      // Display results
+      if (rows.length === 0) {
+        console.log(chalk.yellow('No rows returned'));
+      } else {
+        displayTable(rows);
+      }
+      
+      console.log(chalk.gray(`\n${rows.length} row(s) in ${duration}ms`));
     } else {
-      displayTable(rows);
+      // INSERT, UPDATE, DELETE, CREATE, DROP, ALTER - returns affected rows
+      const result = await db.execute(sql);
+      const duration = Date.now() - startTime;
+      
+      console.log(chalk.green('✓ Statement executed successfully'));
+      console.log(chalk.gray(`  Affected rows: ${result.affectedRows}`));
+      if (result.insertId) {
+        console.log(chalk.gray(`  Insert ID: ${result.insertId}`));
+      }
+      console.log(chalk.gray(`  Duration: ${duration}ms`));
     }
-    
-    console.log(chalk.gray(`\n${rows.length} row(s) in ${duration}ms`));
     
   } catch (err) {
     console.error(chalk.red('✗ Query failed'));
@@ -39,6 +57,24 @@ export async function handleQuery(target, sql, options) {
       await db.disconnect();
     }
   }
+}
+
+/**
+ * Determine if SQL is a query (returns rows) or a statement (modifies data)
+ */
+function isQueryStatement(sql) {
+  const trimmed = sql.trim().toUpperCase();
+  
+  // These keywords indicate a query that returns rows
+  const queryKeywords = ['SELECT', 'PRAGMA', 'EXPLAIN', 'WITH', 'SHOW', 'DESCRIBE', 'DESC'];
+  
+  for (const keyword of queryKeywords) {
+    if (trimmed.startsWith(keyword)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
