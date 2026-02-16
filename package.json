@@ -58,5 +58,12 @@
   },
   "devDependencies": {
     "better-sqlite3": "^12.6.2"
-  }
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ]
 }
