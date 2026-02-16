@@ -34,6 +34,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
@@ -41,23 +42,16 @@
     "yaml": "^2.6.1"
   },
   "peerDependencies": {
-    "better-sqlite3": "^11.0.0",
     "mysql2": "^3.11.5",
     "pg": "^8.13.1"
   },
   "peerDependenciesMeta": {
-    "better-sqlite3": {
-      "optional": true
-    },
     "pg": {
       "optional": true
     },
     "mysql2": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "better-sqlite3": "^12.6.2"
   },
   "files": [
     "src/",
