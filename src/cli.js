@@ -30,14 +30,16 @@ program
   .description('Database management CLI - Connect, query, migrate, and manage databases')
   .version(pkg.version)
   .option('--json', 'Output as JSON (machine-readable)')
-  .option('--quiet, -q', 'Suppress non-essential output')
+  .option('-q, --quiet', 'Suppress non-essential output')
   .option('--schema', 'Output JSON schema describing all commands and flags')
   .hook('preAction', (thisCommand) => {
+    // Merge parent options with command options
+    const parentOpts = thisCommand.parent?.opts() || {};
     const opts = thisCommand.opts();
-    globalOptions = opts;
+    globalOptions = { ...parentOpts, ...opts };
     
     // Disable chalk if JSON mode
-    if (opts.json) {
+    if (globalOptions.json) {
       chalk.level = 0;
     }
   });
