@@ -63,8 +63,8 @@ export async function handleQuery(target, sql, options = {}) {
           duration
         }, null, 2));
       } else {
-        console.log(chalk.green('✓ Statement executed successfully'));
         if (!options.quiet) {
+          console.log(chalk.green('✓ Statement executed successfully'));
           console.log(chalk.gray(`  Affected rows: ${result.affectedRows}`));
           if (result.insertId) {
             console.log(chalk.gray(`  Insert ID: ${result.insertId}`));
