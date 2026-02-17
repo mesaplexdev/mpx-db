@@ -8,9 +8,7 @@ const TEST_DB = './test-data/schema-test.db';
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
-  }
+  fs.rmSync('./test-data', { recursive: true, force: true });
   fs.mkdirSync('./test-data', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
