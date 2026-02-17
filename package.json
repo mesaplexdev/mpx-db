@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "node --test test/**/*.test.js",
+    "test": "node --test test/*.test.js",
     "test:watch": "node --test --watch test/**/*.test.js",
     "dev": "node bin/mpx-db.js"
   },
