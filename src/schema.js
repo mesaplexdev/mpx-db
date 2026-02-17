@@ -560,6 +560,19 @@ export function getSchema() {
         examples: [
           { command: 'mpx-db mcp', description: 'Start MCP stdio server' }
         ]
+      },
+      update: {
+        description: 'Check for updates and optionally install the latest version',
+        usage: 'mpx-db update [--check] [--json]',
+        flags: {
+          '--check': { description: 'Only check for updates (do not install)', default: false },
+          '--json': { description: 'Machine-readable JSON output', default: false }
+        },
+        examples: [
+          { command: 'mpx-db update', description: 'Check and install updates' },
+          { command: 'mpx-db update --check', description: 'Just check for updates' },
+          { command: 'mpx-db update --check --json', description: 'Check for updates (JSON output)' }
+        ]
       }
     },
     mcpConfig: {
