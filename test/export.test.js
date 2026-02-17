@@ -3,15 +3,15 @@ import assert from 'node:assert';
 import fs from 'fs';
 import { createConnection } from '../src/db/connection.js';
 
-const TEST_DB = './test-data/export-test.db';
+const TEST_DB = './test-data/export/export-test.db';
 
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/export')) {
+    fs.rmSync('./test-data/export', { recursive: true });
   }
-  fs.mkdirSync('./test-data', { recursive: true });
+  fs.mkdirSync('./test-data/export', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
   
@@ -34,8 +34,8 @@ after(async () => {
   if (db) {
     await db.disconnect();
   }
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/export')) {
+    fs.rmSync('./test-data/export', { recursive: true });
   }
 });
 
@@ -45,13 +45,13 @@ describe('Data Export', () => {
     const json = JSON.stringify(rows, null, 2);
     
     // Ensure directory exists
-    if (!fs.existsSync('./test-data')) {
-      fs.mkdirSync('./test-data', { recursive: true });
+    if (!fs.existsSync('./test-data/export')) {
+      fs.mkdirSync('./test-data/export', { recursive: true });
     }
     
-    fs.writeFileSync('./test-data/export.json', json);
+    fs.writeFileSync('./test-data/export/export.json', json);
     
-    const exported = JSON.parse(fs.readFileSync('./test-data/export.json', 'utf8'));
+    const exported = JSON.parse(fs.readFileSync('./test-data/export/export.json', 'utf8'));
     assert.strictEqual(exported.length, 3);
     assert.strictEqual(exported[0].name, 'Alice');
   });
@@ -66,13 +66,13 @@ describe('Data Export', () => {
     const csv = [header, data].join('\n');
     
     // Ensure directory exists
-    if (!fs.existsSync('./test-data')) {
-      fs.mkdirSync('./test-data', { recursive: true });
+    if (!fs.existsSync('./test-data/export')) {
+      fs.mkdirSync('./test-data/export', { recursive: true });
     }
     
-    fs.writeFileSync('./test-data/export.csv', csv);
+    fs.writeFileSync('./test-data/export/export.csv', csv);
     
-    const exported = fs.readFileSync('./test-data/export.csv', 'utf8');
+    const exported = fs.readFileSync('./test-data/export/export.csv', 'utf8');
     assert.ok(exported.includes('Alice'));
     assert.ok(exported.includes('Engineering'));
   });

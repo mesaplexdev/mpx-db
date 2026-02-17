@@ -6,21 +6,21 @@ import os from 'os';
 import { createConnection } from '../src/db/connection.js';
 import { saveConnection, loadConnections, deleteConnection, getConnection } from '../src/utils/config.js';
 
-const TEST_DB = './test-data/test.db';
+const TEST_DB = './test-data/conn/test.db';
 const CONFIG_DIR = path.join(os.homedir(), '.mpx-db');
 
 // Clean up before tests
 before(() => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/conn')) {
+    fs.rmSync('./test-data/conn', { recursive: true });
   }
-  fs.mkdirSync('./test-data', { recursive: true });
+  fs.mkdirSync('./test-data/conn', { recursive: true });
 });
 
 // Clean up after tests
 after(() => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/conn')) {
+    fs.rmSync('./test-data/conn', { recursive: true });
   }
 });
 

@@ -3,13 +3,13 @@ import assert from 'node:assert';
 import fs from 'fs';
 import { createConnection } from '../src/db/connection.js';
 
-const TEST_DB = './test-data/schema-test.db';
+const TEST_DB = './test-data/schema/schema-test.db';
 
 let db;
 
 before(async () => {
-  fs.rmSync('./test-data', { recursive: true, force: true });
-  fs.mkdirSync('./test-data', { recursive: true });
+  fs.rmSync('./test-data/schema', { recursive: true, force: true });
+  fs.mkdirSync('./test-data/schema', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
   
@@ -34,9 +34,9 @@ after(async () => {
   }
   // Give time for file handles to close
   await new Promise(resolve => setTimeout(resolve, 100));
-  if (fs.existsSync('./test-data')) {
+  if (fs.existsSync('./test-data/schema')) {
     try {
-      fs.rmSync('./test-data', { recursive: true, force: true });
+      fs.rmSync('./test-data/schema', { recursive: true, force: true });
     } catch (err) {
       // Ignore cleanup errors
     }

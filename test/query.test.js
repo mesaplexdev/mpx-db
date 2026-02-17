@@ -3,15 +3,15 @@ import assert from 'node:assert';
 import fs from 'fs';
 import { createConnection } from '../src/db/connection.js';
 
-const TEST_DB = './test-data/query-test.db';
+const TEST_DB = './test-data/query/query-test.db';
 
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/query')) {
+    fs.rmSync('./test-data/query', { recursive: true });
   }
-  fs.mkdirSync('./test-data', { recursive: true });
+  fs.mkdirSync('./test-data/query', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
   
@@ -30,8 +30,8 @@ after(async () => {
   if (db) {
     await db.disconnect();
   }
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/query')) {
+    fs.rmSync('./test-data/query', { recursive: true });
   }
 });
 

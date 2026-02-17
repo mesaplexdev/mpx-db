@@ -4,16 +4,16 @@ import fs from 'fs';
 import path from 'path';
 import { createConnection } from '../src/db/connection.js';
 
-const TEST_DB = './test-data/migrate-test.db';
-const MIGRATIONS_DIR = './test-data/migrations';
+const TEST_DB = './test-data/migrate/migrate-test.db';
+const MIGRATIONS_DIR = './test-data/migrate/migrations';
 
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data')) {
-    fs.rmSync('./test-data', { recursive: true });
+  if (fs.existsSync('./test-data/migrate')) {
+    fs.rmSync('./test-data/migrate', { recursive: true });
   }
-  fs.mkdirSync('./test-data', { recursive: true });
+  fs.mkdirSync('./test-data/migrate', { recursive: true });
   fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
@@ -25,9 +25,9 @@ after(async () => {
   }
   // Give time for file handles to close
   await new Promise(resolve => setTimeout(resolve, 100));
-  if (fs.existsSync('./test-data')) {
+  if (fs.existsSync('./test-data/migrate')) {
     try {
-      fs.rmSync('./test-data', { recursive: true, force: true });
+      fs.rmSync('./test-data/migrate', { recursive: true, force: true });
     } catch (err) {
       // Ignore cleanup errors
     }
