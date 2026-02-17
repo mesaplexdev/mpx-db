@@ -8,3 +8,9 @@ test-data/
 .DS_Store
 .env
 tmp/
+
+# Internal build docs
+*_SUMMARY.md
+BUILD_*.md
+SPRINT_*.md
+*-sprint*.md
