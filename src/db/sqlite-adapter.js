@@ -10,9 +10,9 @@ export class SQLiteAdapter extends BaseAdapter {
     super(connectionString);
     
     // Extract file path from sqlite:// or sqlite3://
-    this.dbPath = connectionString
-      .replace(/^sqlite3?:\/\//, '')
-      .replace(/^\//, ''); // Remove leading slash if absolute path
+    // sqlite:///tmp/foo.db → /tmp/foo.db (absolute)
+    // sqlite://mydb.db → mydb.db (relative)
+    this.dbPath = connectionString.replace(/^sqlite3?:\/\//, '');
   }
 
   async connect() {
@@ -76,7 +76,7 @@ export class SQLiteAdapter extends BaseAdapter {
     
     const tables = [];
     for (const row of rows) {
-      const countResult = await this.query(`SELECT COUNT(*) as count FROM ${row.name}`);
+      const countResult = await this.query(`SELECT COUNT(*) as count FROM ${this.quoteIdentifier(row.name)}`);
       tables.push({
         name: row.name,
         type: row.type,
@@ -88,7 +88,7 @@ export class SQLiteAdapter extends BaseAdapter {
   }
 
   async getTableSchema(tableName) {
-    const rows = await this.query(`PRAGMA table_info(${tableName})`);
+    const rows = await this.query(`PRAGMA table_info(${this.quoteIdentifier(tableName)})`);
     
     return rows.map(row => ({
       name: row.name,

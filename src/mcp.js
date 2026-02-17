@@ -261,7 +261,7 @@ export async function startMCPServer() {
           const db = await createConnection(connectionString);
           
           try {
-            const rows = await db.query(`SELECT * FROM ${args.table}`);
+            const rows = await db.query(`SELECT * FROM ${db.quoteIdentifier(args.table)}`);
             await db.disconnect();
             
             return {

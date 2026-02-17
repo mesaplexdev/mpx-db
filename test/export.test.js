@@ -8,9 +8,7 @@ const TEST_DB = './test-data/export/export-test.db';
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data/export')) {
-    fs.rmSync('./test-data/export', { recursive: true });
-  }
+  fs.rmSync('./test-data/export', { recursive: true, force: true });
   fs.mkdirSync('./test-data/export', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
@@ -34,9 +32,7 @@ after(async () => {
   if (db) {
     await db.disconnect();
   }
-  if (fs.existsSync('./test-data/export')) {
-    fs.rmSync('./test-data/export', { recursive: true });
-  }
+  fs.rmSync('./test-data/export', { recursive: true, force: true });
 });
 
 describe('Data Export', () => {

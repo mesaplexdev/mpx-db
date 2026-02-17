@@ -8,6 +8,44 @@ import { resolveConnection } from './query.js';
 const MIGRATIONS_DIR = './migrations';
 
 /**
+ * Split SQL into statements on semicolons, respecting quoted strings.
+ */
+function splitStatements(sql) {
+  const statements = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+  
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    const prev = i > 0 ? sql[i - 1] : '';
+    
+    if (ch === "'" && !inDouble && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (ch === '"' && !inSingle && prev !== '\\') {
+      inDouble = !inDouble;
+    }
+    
+    if (ch === ';' && !inSingle && !inDouble) {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed);
+      }
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  
+  const trimmed = current.trim();
+  if (trimmed.length > 0) {
+    statements.push(trimmed);
+  }
+  
+  return statements;
+}
+
+/**
  * Initialize migrations directory
  */
 export async function initMigrations(options = {}) {
@@ -287,17 +325,14 @@ export async function runMigrations(target, options = {}) {
         console.log(chalk.gray(`→ ${name}`));
       }
       
-      // Execute migration (split by semicolon for multiple statements)
+      // Execute migration (split by semicolon, respecting quoted strings)
       // Remove comment lines first, then split
       const cleanedSQL = migration.up
         .split('\n')
         .filter(line => !line.trim().startsWith('--'))
         .join('\n');
       
-      const statements = cleanedSQL
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
+      const statements = splitStatements(cleanedSQL);
       
       for (const statement of statements) {
         await db.execute(statement);
@@ -385,17 +420,14 @@ export async function rollbackMigration(target, options = {}) {
       console.log(chalk.cyan(`Rolling back: ${last.name}`));
     }
     
-    // Execute rollback (split by semicolon for multiple statements)
+    // Execute rollback (split by semicolon, respecting quoted strings)
     // Remove comment lines first, then split
     const cleanedSQL = migration.down
       .split('\n')
       .filter(line => !line.trim().startsWith('--'))
       .join('\n');
     
-    const statements = cleanedSQL
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+    const statements = splitStatements(cleanedSQL);
     
     for (const statement of statements) {
       await db.execute(statement);

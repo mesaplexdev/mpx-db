@@ -11,17 +11,13 @@ const CONFIG_DIR = path.join(os.homedir(), '.mpx-db');
 
 // Clean up before tests
 before(() => {
-  if (fs.existsSync('./test-data/conn')) {
-    fs.rmSync('./test-data/conn', { recursive: true });
-  }
+  fs.rmSync('./test-data/conn', { recursive: true, force: true });
   fs.mkdirSync('./test-data/conn', { recursive: true });
 });
 
 // Clean up after tests
 after(() => {
-  if (fs.existsSync('./test-data/conn')) {
-    fs.rmSync('./test-data/conn', { recursive: true });
-  }
+  fs.rmSync('./test-data/conn', { recursive: true, force: true });
 });
 
 describe('Database Connection', () => {

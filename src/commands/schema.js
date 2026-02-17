@@ -224,7 +224,7 @@ export async function dumpSchema(target, options = {}) {
         return def;
       });
       
-      sqlOutput += `CREATE TABLE ${table.name} (\n`;
+      sqlOutput += `CREATE TABLE "${table.name}" (\n`;
       sqlOutput += cols.join(',\n');
       sqlOutput += '\n);\n\n';
     }

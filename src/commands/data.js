@@ -14,10 +14,12 @@ export async function exportData(target, tableName, options = {}) {
     db = await createConnection(connectionString);
     
     // Query all data
-    const rows = await db.query(`SELECT * FROM ${tableName}`);
+    const rows = await db.query(`SELECT * FROM ${db.quoteIdentifier(tableName)}`);
     
     if (rows.length === 0) {
-      if (!options.quiet) {
+      if (options.json) {
+        console.log(JSON.stringify({ success: true, rows: [], rowCount: 0 }, null, 2));
+      } else if (!options.quiet) {
         console.log(chalk.yellow('No data to export'));
       }
       return;

@@ -4,6 +4,11 @@ import { BaseAdapter } from './base-adapter.js';
  * MySQL adapter using mysql2
  */
 export class MySQLAdapter extends BaseAdapter {
+  constructor(connectionString) {
+    super(connectionString);
+    this._identifierQuote = '`';
+  }
+
   async connect() {
     try {
       const mysql = await import('mysql2/promise');
@@ -62,7 +67,7 @@ export class MySQLAdapter extends BaseAdapter {
     const tables = [];
     for (const row of rows) {
       const countResult = await this.query(
-        `SELECT COUNT(*) as count FROM \`${row.name}\``
+        `SELECT COUNT(*) as count FROM ${this.quoteIdentifier(row.name)}`
       );
       tables.push({
         name: row.name,

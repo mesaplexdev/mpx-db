@@ -8,9 +8,7 @@ const TEST_DB = './test-data/query/query-test.db';
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data/query')) {
-    fs.rmSync('./test-data/query', { recursive: true });
-  }
+  fs.rmSync('./test-data/query', { recursive: true, force: true });
   fs.mkdirSync('./test-data/query', { recursive: true });
   
   db = await createConnection(`sqlite://${TEST_DB}`);
@@ -30,9 +28,7 @@ after(async () => {
   if (db) {
     await db.disconnect();
   }
-  if (fs.existsSync('./test-data/query')) {
-    fs.rmSync('./test-data/query', { recursive: true });
-  }
+  fs.rmSync('./test-data/query', { recursive: true, force: true });
 });
 
 describe('Query Operations', () => {

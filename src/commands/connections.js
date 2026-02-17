@@ -120,6 +120,7 @@ export async function removeConnection(name, options = {}) {
       name,
       message: deleted ? 'Connection deleted' : 'Connection not found'
     }, null, 2));
+    if (!deleted) process.exit(1);
     return;
   }
   
@@ -128,5 +129,6 @@ export async function removeConnection(name, options = {}) {
     console.log(chalk.green(`✓ Deleted connection "${name}"`));
   } else {
     console.log(chalk.yellow(`Connection "${name}" not found`));
+    process.exit(1);
   }
 }

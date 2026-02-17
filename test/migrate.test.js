@@ -10,9 +10,7 @@ const MIGRATIONS_DIR = './test-data/migrate/migrations';
 let db;
 
 before(async () => {
-  if (fs.existsSync('./test-data/migrate')) {
-    fs.rmSync('./test-data/migrate', { recursive: true });
-  }
+  fs.rmSync('./test-data/migrate', { recursive: true, force: true });
   fs.mkdirSync('./test-data/migrate', { recursive: true });
   fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
   

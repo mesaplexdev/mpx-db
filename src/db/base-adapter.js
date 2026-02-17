@@ -9,6 +9,22 @@ export class BaseAdapter {
   }
 
   /**
+   * Validate and quote a table/identifier name to prevent SQL injection.
+   * Rejects names with dangerous characters. Override quoteChar in subclasses.
+   */
+  quoteIdentifier(name) {
+    if (!name || typeof name !== 'string') {
+      throw new Error('Invalid identifier: must be a non-empty string');
+    }
+    // Allow alphanumeric, underscores, dots (schema.table), hyphens
+    if (!/^[a-zA-Z_][a-zA-Z0-9_.\\-]*$/.test(name)) {
+      throw new Error(`Invalid identifier: "${name}" contains disallowed characters`);
+    }
+    const q = this._identifierQuote || '"';
+    return `${q}${name.replace(new RegExp(`\\${q}`, 'g'), q + q)}${q}`;
+  }
+
+  /**
    * Connect to database
    */
   async connect() {
@@ -63,7 +79,7 @@ export class BaseAdapter {
    * Get table row count
    */
   async getRowCount(tableName) {
-    const result = await this.query(`SELECT COUNT(*) as count FROM ${tableName}`);
+    const result = await this.query(`SELECT COUNT(*) as count FROM ${this.quoteIdentifier(tableName)}`);
     return result[0].count;
   }
 

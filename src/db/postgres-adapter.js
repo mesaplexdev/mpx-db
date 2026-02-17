@@ -64,7 +64,7 @@ export class PostgresAdapter extends BaseAdapter {
     const tables = [];
     for (const row of rows) {
       const countResult = await this.query(
-        `SELECT COUNT(*) as count FROM ${row.name}`
+        `SELECT COUNT(*) as count FROM ${this.quoteIdentifier(row.name)}`
       );
       tables.push({
         name: row.name,
@@ -125,6 +125,17 @@ export class PostgresAdapter extends BaseAdapter {
       tables: tables.length,
       totalRows
     };
+  }
+
+  async recordMigration(name) {
+    await this.execute(
+      'INSERT INTO mpx_migrations (name, applied_at) VALUES ($1, $2)',
+      [name, new Date().toISOString()]
+    );
+  }
+
+  async removeMigration(name) {
+    await this.execute('DELETE FROM mpx_migrations WHERE name = $1', [name]);
   }
 
   async ensureMigrationsTable() {

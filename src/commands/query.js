@@ -36,15 +36,12 @@ export async function handleQuery(target, sql, options = {}) {
           rowCount: rows.length,
           duration
         }, null, 2));
-      } else {
+      } else if (!options.quiet) {
         // Display results
         if (rows.length === 0) {
           console.log(chalk.yellow('No rows returned'));
         } else {
           displayTable(rows);
-        }
-        
-        if (!options.quiet) {
           console.log(chalk.gray(`\n${rows.length} row(s) in ${duration}ms`));
         }
       }
