@@ -1,7 +1,7 @@
 {
   "name": "mpx-db",
   "version": "1.1.3",
-  "description": "Database management CLI - Connect, query, migrate, and manage databases from the terminal",
+  "description": "Database management CLI. Connect, query, migrate, and manage databases. AI-native with JSON output and MCP server.",
   "main": "src/index.js",
   "bin": {
     "mpx-db": "bin/mpx-db.js"
@@ -12,20 +12,23 @@
     "test:watch": "node --test --watch test/**/*.test.js",
     "dev": "node bin/mpx-db.js"
   },
+  "funding": "https://mesaplex.com/pricing",
   "keywords": [
-    "database",
     "cli",
+    "devtools",
+    "mesaplex",
+    "ai-native",
+    "mcp",
+    "model-context-protocol",
+    "automation",
+    "json-output",
+    "database",
     "migration",
     "postgresql",
     "mysql",
     "sqlite",
     "schema",
-    "sql",
-    "mcp",
-    "ai-native",
-    "model-context-protocol",
-    "automation",
-    "json-output"
+    "sql"
   ],
   "author": "Mesaplex <support@mesaplex.com>",
   "license": "SEE LICENSE IN LICENSE",
