@@ -32,8 +32,15 @@ program
   .option('--json', 'Output as JSON (machine-readable)')
   .option('-q, --quiet', 'Suppress non-essential output')
   .option('--no-color', 'Disable colored output')
-  .option('--schema', 'Output JSON schema describing all commands and flags')
-  .hook('preAction', (thisCommand) => {
+  .option('--schema', 'Output JSON schema describing all commands and flags');
+
+// Error handling — must be set BEFORE .command() so subcommands inherit exitOverride
+program.exitOverride();
+program.configureOutput({
+  writeErr: () => {} // Suppress Commander's own error output; we handle it in the catch below
+});
+
+program.hook('preAction', (thisCommand) => {
     // Merge parent options with command options
     const parentOpts = thisCommand.parent?.opts() || {};
     const opts = thisCommand.opts();
@@ -219,7 +226,7 @@ program
       if (jsonMode) {
         console.log(JSON.stringify({ error: err.message, code: 'ERR_UPDATE' }, null, 2));
       } else {
-        console.error(chalk.red.bold('\n❌ Update check failed:'), err.message);
+        console.error(chalk.red('Error:'), err.message);
         console.error('');
       }
       process.exit(1);
@@ -246,12 +253,6 @@ if (process.argv.includes('--schema')) {
   process.exit(0);
 }
 
-// Error handling
-program.exitOverride();
-program.configureOutput({
-  writeErr: () => {} // Suppress Commander's own error output; we handle it below
-});
-
 try {
   await program.parseAsync(process.argv);
 } catch (err) {
@@ -260,8 +261,7 @@ try {
     process.exit(0);
   }
   if (err.code !== 'commander.help' && err.code !== 'commander.helpDisplayed') {
-    // Commander errors already have descriptive messages; don't double-prefix
-    const msg = err.message.startsWith('error:') ? err.message : `Error: ${err.message}`;
+    const msg = err.message.startsWith('error:') ? `Error: ${err.message.slice(7)}` : `Error: ${err.message}`;
     console.error(chalk.red(msg));
     process.exit(1);
   }
