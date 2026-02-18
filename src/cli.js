@@ -31,6 +31,7 @@ program
   .version(pkg.version)
   .option('--json', 'Output as JSON (machine-readable)')
   .option('-q, --quiet', 'Suppress non-essential output')
+  .option('--no-color', 'Disable colored output')
   .option('--schema', 'Output JSON schema describing all commands and flags')
   .hook('preAction', (thisCommand) => {
     // Merge parent options with command options
@@ -38,8 +39,8 @@ program
     const opts = thisCommand.opts();
     globalOptions = { ...parentOpts, ...opts };
     
-    // Disable chalk if JSON mode
-    if (globalOptions.json) {
+    // Disable chalk if JSON mode or --no-color
+    if (globalOptions.json || globalOptions.color === false) {
       chalk.level = 0;
     }
   });
@@ -247,6 +248,9 @@ if (process.argv.includes('--schema')) {
 
 // Error handling
 program.exitOverride();
+program.configureOutput({
+  writeErr: () => {} // Suppress Commander's own error output; we handle it below
+});
 
 try {
   await program.parseAsync(process.argv);
@@ -256,7 +260,9 @@ try {
     process.exit(0);
   }
   if (err.code !== 'commander.help' && err.code !== 'commander.helpDisplayed') {
-    console.error(chalk.red(`Error: ${err.message}`));
+    // Commander errors already have descriptive messages; don't double-prefix
+    const msg = err.message.startsWith('error:') ? err.message : `Error: ${err.message}`;
+    console.error(chalk.red(msg));
     process.exit(1);
   }
 }
