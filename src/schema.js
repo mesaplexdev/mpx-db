@@ -586,6 +586,31 @@ export function getSchema() {
         }
       }
     },
+    globalFlags: {
+      '--json': {
+        type: 'boolean',
+        default: false,
+        description: 'Output results as structured JSON'
+      },
+      '-q, --quiet': {
+        type: 'boolean',
+        default: false,
+        description: 'Suppress non-essential output'
+      },
+      '--schema': {
+        type: 'boolean',
+        default: false,
+        description: 'Output this schema as JSON'
+      },
+      '--version': {
+        type: 'boolean',
+        description: 'Show version number'
+      },
+      '--help': {
+        type: 'boolean',
+        description: 'Show help information'
+      }
+    },
     exitCodes: {
       0: 'Success',
       1: 'Error (connection failed, query failed, etc.)'
