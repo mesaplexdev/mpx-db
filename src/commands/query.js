@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { getConnection } from '../utils/config.js';
 import { createConnection } from '../db/connection.js';
+import { generateQueryPDF } from '../reporters/pdf.js';
 
 /**
  * Execute a query or statement
@@ -27,8 +28,15 @@ export async function handleQuery(target, sql, options = {}) {
       const rows = await db.query(sql);
       const duration = Date.now() - startTime;
       
+      // PDF output
+      if (options.pdf) {
+        await generateQueryPDF(rows, { sql, duration }, options.pdf);
+        if (!options.quiet) {
+          console.log(chalk.green(`✓ Query report saved to ${options.pdf} (${rows.length} rows)`));
+        }
+      }
       // JSON output
-      if (options.json) {
+      else if (options.json) {
         console.log(JSON.stringify({
           success: true,
           type: 'query',

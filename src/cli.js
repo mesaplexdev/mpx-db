@@ -32,7 +32,8 @@ program
   .option('--json', 'Output as JSON (machine-readable)')
   .option('-q, --quiet', 'Suppress non-essential output')
   .option('--no-color', 'Disable colored output')
-  .option('--schema', 'Output JSON schema describing all commands and flags');
+  .option('--schema', 'Output JSON schema describing all commands and flags')
+  .option('--pdf <file>', 'Export results as a PDF report');
 
 // Error handling — must be set BEFORE .command() so subcommands inherit exitOverride
 program.exitOverride();
@@ -82,7 +83,8 @@ program
   .description('Execute a SQL query')
   .argument('<target>', 'Connection name or URL')
   .argument('<sql>', 'SQL query to execute')
-  .action((target, sql) => handleQuery(target, sql, globalOptions));
+  .option('--pdf <file>', 'Export query results as PDF report')
+  .action((target, sql, options) => handleQuery(target, sql, { ...globalOptions, ...options }));
 
 // Info command
 program
@@ -115,7 +117,8 @@ schema
   .command('dump')
   .description('Dump database schema as SQL')
   .argument('<target>', 'Connection name or URL')
-  .action((target) => dumpSchema(target, globalOptions));
+  .option('--pdf <file>', 'Export schema as PDF report')
+  .action((target, options) => dumpSchema(target, { ...globalOptions, ...options }));
 
 // Migration commands
 const migrate = program

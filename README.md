@@ -189,9 +189,24 @@ The MCP server exposes these tools:
 | 0 | Success |
 | 1 | Error (connection failed, query failed, etc.) |
 
+### PDF Reports
+
+Generate professional PDF reports from queries and schema dumps:
+
+```bash
+# Schema report — full database structure as PDF
+mpx-db schema dump <connection> --pdf schema-report.pdf
+
+# Query results as PDF
+mpx-db query <connection> "SELECT * FROM users" --pdf results.pdf
+```
+
+PDFs include formatted tables, database metadata, and Mesaplex branding. Great for sharing with teammates or archiving.
+
 ### Automation Tips
 
 - Use `--json` for machine-parseable output
+- Use `--pdf <file>` for formatted reports
 - Use `--quiet` to suppress banners and progress info
 - Pipe output to `jq` for filtering
 - Check exit codes for pass/fail in CI/CD

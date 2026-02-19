@@ -139,7 +139,7 @@ export function getSchema() {
       },
       query: {
         description: 'Execute a SQL query',
-        usage: 'mpx-db query <target> <sql> [--json]',
+        usage: 'mpx-db query <target> <sql> [--json] [--pdf file.pdf]',
         arguments: {
           target: {
             type: 'string',
@@ -157,6 +157,10 @@ export function getSchema() {
             type: 'boolean',
             default: false,
             description: 'Output results as JSON'
+          },
+          '--pdf': {
+            type: 'string',
+            description: 'Export query results as a formatted PDF report'
           },
           '--quiet': {
             type: 'boolean',
@@ -318,7 +322,7 @@ export function getSchema() {
       },
       'schema dump': {
         description: 'Dump database schema as SQL',
-        usage: 'mpx-db schema dump <target>',
+        usage: 'mpx-db schema dump <target> [--pdf file.pdf]',
         arguments: {
           target: {
             type: 'string',
@@ -331,6 +335,10 @@ export function getSchema() {
             type: 'boolean',
             default: false,
             description: 'Output as JSON with SQL content'
+          },
+          '--pdf': {
+            type: 'string',
+            description: 'Export schema as a formatted PDF report'
           },
           '--quiet': {
             type: 'boolean',
@@ -591,6 +599,10 @@ export function getSchema() {
         type: 'boolean',
         default: false,
         description: 'Output results as structured JSON'
+      },
+      '--pdf': {
+        type: 'string',
+        description: 'Export results as a formatted PDF report (supported by query, schema dump)'
       },
       '-q, --quiet': {
         type: 'boolean',

@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { createConnection } from '../db/connection.js';
 import { resolveConnection } from './query.js';
+import { generateSchemaPDF } from '../reporters/pdf.js';
 
 /**
  * Show database info
@@ -135,9 +136,9 @@ export async function describeTable(target, tableName, options = {}) {
       if (options.json) {
         console.log(JSON.stringify({ error: `Table "${tableName}" not found` }, null, 2));
       } else {
-        console.log(chalk.yellow(`Table "${tableName}" not found or has no columns`));
+        console.error(chalk.yellow(`Table "${tableName}" not found or has no columns`));
       }
-      return;
+      process.exit(1);
     }
     
     // JSON output
@@ -216,19 +217,38 @@ export async function dumpSchema(target, options = {}) {
       sqlOutput += `-- Table: ${table.name}\n`;
       sqlOutput += `-- Rows: ${table.rows}\n`;
       
-      // This is a simplified dump - real implementations would generate proper DDL
+      const pkCols = schema.filter(c => c.primaryKey).map(c => c.name);
       const cols = schema.map(c => {
         let def = `  ${c.name} ${c.type}`;
-        if (!c.nullable) def += ' NOT NULL';
+        if (c.primaryKey && pkCols.length === 1) def += ' PRIMARY KEY';
+        if (!c.nullable && !c.primaryKey) def += ' NOT NULL';
         if (c.default) def += ` DEFAULT ${c.default}`;
         return def;
       });
       
       sqlOutput += `CREATE TABLE "${table.name}" (\n`;
       sqlOutput += cols.join(',\n');
+      if (pkCols.length > 1) {
+        sqlOutput += `,\n  PRIMARY KEY (${pkCols.join(', ')})`;
+      }
       sqlOutput += '\n);\n\n';
     }
     
+    // PDF output
+    if (options.pdf) {
+      const tableSchemas = [];
+      for (const table of tables) {
+        if (table.type !== 'table') continue;
+        const cols = await db.getTableSchema(table.name);
+        tableSchemas.push({ name: table.name, columns: cols });
+      }
+      await generateSchemaPDF(info, tables, tableSchemas, options.pdf);
+      if (!options.quiet) {
+        console.log(chalk.green(`✓ Schema report saved to ${options.pdf}`));
+      }
+      return;
+    }
+
     // JSON output
     if (options.json) {
       console.log(JSON.stringify({ sql: sqlOutput }, null, 2));
